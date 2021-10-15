@@ -1,6 +1,7 @@
 import argparse
 import torch
 import pyro.contrib.funsor
+from pyro.ops.indexing import Vindex
 from pyro.infer.autoguide import AutoDelta
 from pyroapi import distributions as dist
 from pyroapi import handlers, infer, pyro, pyro_backend
@@ -12,20 +13,20 @@ parser.add_argument("--print-shapes", action="store_true")
 
 X0 = 5.0
 SIGMA = 1.0
-BETA = (10.0, 1.0)
+BETA = (torch.tensor([-5.0, 0.0, 10.0]), 1.0)
 DATA = torch.tensor([20.0, 40.0, 50.0, 60.0, 60.0])
 
 
 def model(nstate=3, data=DATA):
     """Simple Switching Linear Dynamical System:
 
-    dx/dt = β s, modelled as
+    dx/dt = β[s], modelled as
 
-    β ~ N(μ_β, σ_β)
+    β ~ N(μ_β, σ_β) where μ_β in R^3
     s[0] ~ Cat(w0)
     x[0] ~ N(µ_x, σ_x)
     s[t] ~ Cat(T s[t-1])
-    x[t] ~ N(x[t-1] + β s[t-1], σ_x)
+    x[t] ~ N(x[t-1] + β[s[t-1]], σ_x)
     """
     nt = len(data)
 
@@ -44,17 +45,18 @@ def model(nstate=3, data=DATA):
         dist.Normal(X0, SIGMA),
     )
 
-    beta = pyro.sample("beta", dist.Normal(*BETA))
+    with pyro.plate("states", nstate, dim=-1):
+        beta = pyro.sample("beta", dist.Normal(*BETA))
 
     try:
-        time_plate = pyro.vectorized_markov(name="time", size=nt, dim=-1)
+        time_plate = pyro.vectorized_markov(name="time", size=nt, dim=-2)
     except NotImplementedError:
         time_plate = pyro.markov(range(nt))
 
     for t in time_plate:
         x = pyro.sample(
             f"x_{t}",
-            dist.Normal(x + s * beta, SIGMA),
+            dist.Normal(x + Vindex(beta)[s], SIGMA),
             obs=data[t],
         )
         s = pyro.sample(
@@ -88,7 +90,6 @@ def main(args, max_plate_nesting=1):
     except NotImplementedError:
         Elbo = infer.TraceEnum_ELBO
 
-    print("Evaluate enumerated ELBO")
     elbo = Elbo(max_plate_nesting=max_plate_nesting)
     elbo.loss(model, guide)
 
