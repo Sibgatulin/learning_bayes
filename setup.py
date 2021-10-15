@@ -16,6 +16,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         "jax",
+        "torch",
+        "pyro",
         "numpyro",
         "funsor",
         "jupyter",
