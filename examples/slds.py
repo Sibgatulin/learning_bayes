@@ -10,10 +10,10 @@ parser.add_argument("--backend", default="contrib.funsor", type=str)
 parser.add_argument("--seed", default=0, type=int)
 parser.add_argument("--print-shapes", action="store_true")
 
-X0 = 5.4707
+X0 = 5.0
 SIGMA = 1.0
 BETA = (10.0, 1.0)
-DATA = torch.tensor([23.3896, 42.4653, 50.0880, 61.2580, 61.7046])
+DATA = torch.tensor([20.0, 40.0, 50.0, 60.0, 60.0])
 
 
 def model(nstate=3, data=DATA):
@@ -47,7 +47,7 @@ def model(nstate=3, data=DATA):
     beta = pyro.sample("beta", dist.Normal(*BETA))
 
     try:
-        time_plate = pyro.vectorized_markov(name="time", size=nt, dim=-2)
+        time_plate = pyro.vectorized_markov(name="time", size=nt, dim=-1)
     except NotImplementedError:
         time_plate = pyro.markov(range(nt))
 
@@ -89,7 +89,7 @@ def main(args, max_plate_nesting=1):
         Elbo = infer.TraceEnum_ELBO
 
     print("Evaluate enumerated ELBO")
-    elbo = Elbo(max_plate_nesting=max_plate_nesting, strict_enumeration_warning=True)
+    elbo = Elbo(max_plate_nesting=max_plate_nesting)
     elbo.loss(model, guide)
 
 
