@@ -49,3 +49,19 @@ kernel = NUTS(discrete.model_inf)
 mcmc = MCMC(kernel, num_warmup=500, num_samples=500, num_chains=1)
 mcmc.run(rng_infer, y=obs)
 mcmc.print_summary()
+# |%%--%%|
+"""
+## Test: infer using only one obs (and the generative model without the obs plate)
+"""
+# |%%--%%|
+model_conditioned = handlers.condition(discrete.model_gen, {"likelihood": obs[0]})
+# |%%--%%|
+kernel = NUTS(model_conditioned)
+mcmc = MCMC(kernel, num_warmup=500, num_samples=500, num_chains=1)
+mcmc.run(rng_infer)
+mcmc.print_summary()
+# |%%--%%|
+"""
+Benignly poor
+"""
+# |%%--%%|
