@@ -28,7 +28,13 @@ predictive = Predictive(model_generative, num_samples=100)
 samples_prior = predictive(rng_simulate)
 # |%%--%%|
 obs = samples_prior["likelihood"]
-plt.hist(obs)
+bin_edges = np.linspace(obs.min(), obs.max(), 20)
+hist = np.array([np.histogram(a, bins=bin_edges)[0] for a in obs.T])
+# |%%--%%|
+plt.imshow(hist, extent=tuple(bin_edges[np.array([0, -1])]) + (0, 9))
+plt.xlabel("observed value")
+plt.ylabel("spatial dim")
+plt.title("histogram")
 plt.show()
 # |%%--%%|
 """
