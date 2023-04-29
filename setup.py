@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 
 def readme():
@@ -15,12 +15,12 @@ setup(
     author="Renat Sibgatulin",
     packages=find_packages(),
     install_requires=[
-        "jax",
-        "torch",
-        "pyro-ppl",
-        "numpyro",
         "funsor",
-        "jupyter",
         "matplotlib",
     ],
+    extras_require={
+        "torch": ["torch", "pyro-ppl"],
+        "jax": ["jax", "numpyro"],
+        "jupyter": ["jupyter"],
+    },
 )
